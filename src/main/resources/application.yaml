@@ -5,30 +5,11 @@ spring:
     bannerMode: off
   application:
     name: loki-logger
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password: password
-    sqlScriptEncoding: UTF-8
-  jpa:
-    databasePlatform: org.hibernate.dialect.H2Dialect
-    deferDatasourceInitialization: true
-    hibernate:
-      ddlAuto: create
-    showSql: true
-#  sql:
-#    init:
-#      mode: never
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      settings:
-        trace: false
-        web-allow-others: false
-#  http://localhost:8080/h2-console
+  profiles:
+    active: dev-test
 logging:
+#  file:
+#    path: logs
   level:
     root: ERROR
     org:
