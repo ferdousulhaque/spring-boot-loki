@@ -25,16 +25,16 @@ services:
     networks:
       - grafana-network
 
-  promtail:
-    container_name: promtail
-    image: grafana/promtail:2.8.1
-    restart: always
-    volumes:
-      - ./docker-conf/promtail-client:/etc/promtail
-      - ./logs:/var/log
-    command: -config.file=/etc/promtail/promtail-config.yaml
-    networks:
-      - grafana-network
+#  promtail:
+#    container_name: promtail
+#    image: grafana/promtail:2.8.1
+#    restart: always
+#    volumes:
+#      - ./docker-conf/promtail-client:/etc/promtail
+#      - ./logs:/var/log
+#    command: -config.file=/etc/promtail/promtail-config.yaml
+#    networks:
+#      - grafana-network
 
 networks:
   grafana-network:

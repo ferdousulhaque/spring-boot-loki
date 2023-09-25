@@ -8,6 +8,7 @@ import java.util.HashMap;
 @org.springframework.stereotype.Service
 @Component
 public class Service {
+
     public SimpleResponse getMessage(){
         SimpleResponse response = new SimpleResponse();
         response.status = true;

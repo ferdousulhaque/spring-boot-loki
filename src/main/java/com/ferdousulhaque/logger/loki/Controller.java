@@ -9,14 +9,17 @@ import responseObjs.SimpleResponse;
 @RestController
 @Slf4j
 public class Controller {
-
     @Autowired
     Service $service;
 
     @GetMapping("/")
-    public SimpleResponse index(){
+    public SimpleResponse index() throws InterruptedException {
         SimpleResponse interceptor = $service.getMessage();
-        log.info(interceptor.getData().toString());
+        try{
+            Thread.sleep(1000);
+        }catch (InterruptedException iex){
+            throw new InterruptedException("Thread interrupted");
+        }
         return interceptor;
     }
 }

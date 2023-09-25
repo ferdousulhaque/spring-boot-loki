@@ -7,27 +7,27 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
-
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Component
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 public class RequestLogFilter extends GenericFilterBean {
+
+//    private Logger log = (Logger) LoggerFactory.getLogger(RequestLogFilter.class);
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -39,17 +39,22 @@ public class RequestLogFilter extends GenericFilterBean {
     }
 
     @SneakyThrows
+
     private void logRequest(ContentCachingRequestWrapper request) {
         String parameters = parametersToString(request.getParameterMap());
         String headers = headersToString(Collections.list(request.getHeaderNames()), request::getHeader);
-        String body = new String(request.getContentAsByteArray());
-        Map<String, String> logMap = new LinkedHashMap<>() {{
-            put("\nParameters:", parameters);
-            put("\nHeaders:", headers);
-            put("\nBody:", body);
-        }};
-        String logString = joinMapIntoString(logMap);
-        log.info("\nREQUEST:\nAPI: {}", request.getMethod() + request.getRequestURI() + logString);
+//        String body = new String(request.getContentAsByteArray());
+        StringBuilder body = new StringBuilder();
+        String line;
+        BufferedReader reader = request.getReader();
+        while ((line = reader.readLine()) != null) {
+            body.append(line);
+        }
+//        MDC.put("reqHeaders", headers);
+        MDC.put("reqParams", parameters);
+        MDC.put("reqBody", body.toString());
+
+        log.info("{}", request.getMethod() + " " + request.getRequestURI());
     }
 
     private void logResponse(ContentCachingResponseWrapper response) throws IOException {
@@ -61,7 +66,7 @@ public class RequestLogFilter extends GenericFilterBean {
             put("\nBody:", body);
         }};
         String logString = joinMapIntoString(logMap);
-        log.info("\nRESPONSE: {}", logString);
+//        log.info("\nRESPONSE: {}", logString);
         response.copyBodyToResponse();
     }
 
