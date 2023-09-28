@@ -18,6 +18,8 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,49 +29,83 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RequestLogFilter extends GenericFilterBean {
 
-//    private Logger log = (Logger) LoggerFactory.getLogger(RequestLogFilter.class);
+    private static final int TRUNCATE_AFTER_WORD_COUNT = 100;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper((HttpServletRequest) request);
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper((HttpServletResponse) response);
         chain.doFilter(requestWrapper, responseWrapper);
-        logRequest(requestWrapper);
-        logResponse(responseWrapper);
+        logSetter(requestWrapper, responseWrapper);
     }
 
     @SneakyThrows
+    private void logSetter(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response){
+        InetAddress ipaddr = getIp();
+        String hostname = getHostname();
+//        String requestHeaders = getRequestHeaders(request);
+        String requestBody = getRequestBody(request);
+        String requestParams = getRequestParams(request);
+        String responseHeaders = getResponseHeaders(response);
+        String responseBody = getResponseBody(response);
+        String responseCode = getResponseCode(response);
+        response.copyBodyToResponse();
 
-    private void logRequest(ContentCachingRequestWrapper request) {
-        String parameters = parametersToString(request.getParameterMap());
-        String headers = headersToString(Collections.list(request.getHeaderNames()), request::getHeader);
-//        String body = new String(request.getContentAsByteArray());
+        // Set
+        MDC.put("ipaddr", ipaddr.toString());
+        MDC.put("hostname", hostname);
+//        MDC.put("requestHeaders", requestHeaders);
+        MDC.put("requestBody", requestBody);
+        MDC.put("requestParams", requestParams);
+        MDC.put("responseHeaders", responseHeaders);
+        MDC.put("responseBody", responseBody);
+        MDC.put("responseCode", responseCode);
+
+        // Push
+        log.info("{}", request.getMethod() + " " + request.getRequestURI());
+    }
+
+    private InetAddress getIp() throws UnknownHostException {
+        return InetAddress.getLocalHost();
+    }
+
+    private String getHostname() throws UnknownHostException {
+        return InetAddress.getLocalHost().getHostName();
+    }
+
+    private String getRequestHeaders(ContentCachingRequestWrapper request){
+        return multiLineToSingleLine(
+                    headersToString(
+                            Collections.list(request.getHeaderNames()), request::getHeader));
+    }
+    @SneakyThrows
+    private String getRequestBody(ContentCachingRequestWrapper request){
         StringBuilder body = new StringBuilder();
         String line;
         BufferedReader reader = request.getReader();
         while ((line = reader.readLine()) != null) {
             body.append(line);
         }
-//        MDC.put("reqHeaders", headers);
-        MDC.put("reqParams", parameters);
-        MDC.put("reqBody", body.toString());
-
-        log.info("{}", request.getMethod() + " " + request.getRequestURI());
+        return jsonEncodeAndTruncate(body.toString());
+    }
+    @SneakyThrows
+    private String getRequestParams(ContentCachingRequestWrapper request) {
+        return parametersToString(request.getParameterMap());
     }
 
-    private void logResponse(ContentCachingResponseWrapper response) throws IOException {
-        String headers = headersToString(response.getHeaderNames(), response::getHeader);
-        String body = new String(response.getContentAsByteArray());
-        Map<String, String> logMap = new LinkedHashMap<>() {{
-            put("\nStatus", String.valueOf(response.getStatus()));
-            put("\nHeaders:", headers);
-            put("\nBody:", body);
-        }};
-        String logString = joinMapIntoString(logMap);
-//        log.info("\nRESPONSE: {}", logString);
-        response.copyBodyToResponse();
+    private String getResponseHeaders(ContentCachingResponseWrapper response){
+        return headersToString(response.getHeaderNames(), response::getHeader);
+    }
+    @SneakyThrows
+    private String getResponseBody(ContentCachingResponseWrapper response){
+        return new String(response.getContentAsByteArray());
+    }
+    @SneakyThrows
+    private String getResponseCode(ContentCachingResponseWrapper response) {
+        return String.valueOf(response.getStatus());
     }
 
+    // Helper Functions
     private static String joinMapIntoString(Map<String, String> logMap) {
         return logMap.entrySet().stream()
                 .filter(e -> StringUtils.isNotBlank(e.getValue()))
@@ -88,5 +124,14 @@ public class RequestLogFilter extends GenericFilterBean {
         return parameterMap.entrySet().stream()
                 .map(param -> String.join("=", param.getKey(), Arrays.toString(param.getValue())))
                 .collect(Collectors.joining("\n"));
+    }
+
+    private String multiLineToSingleLine(String multiLine){
+        return multiLine.replaceAll("\r\n", " ");
+    }
+
+    private String jsonEncodeAndTruncate(String payload){
+        payload = payload.replace("\"", "\\\"");
+        return payload.substring(0, TRUNCATE_AFTER_WORD_COUNT);
     }
 }

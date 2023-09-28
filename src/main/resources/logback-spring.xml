@@ -34,10 +34,15 @@
                     "level":"%level",
                     "class":"%logger{36}",
                     "thread":"%thread",
-                    "message": "%message",
+                    "ipaddr": "%X{ipaddr}",
+                    "hostname": "%X{hostname}",
+                    "route": "%message",
+                    "requestBody": "%X{requestBody}",
+                    "requestParams": "%X{requestParams}",
+                    "responseHeaders": "%X{responseHeaders}",
+                    "responseBody": "%X{responseBody}",
+                    "responseCode": "%X{responseCode}",
                     "requestId": "%X{X-Request-ID}"
-                    "params": "%X{reqParams}"
-                    "body": "%X{reqBody}"
                     }
                 </pattern>
             </message>
