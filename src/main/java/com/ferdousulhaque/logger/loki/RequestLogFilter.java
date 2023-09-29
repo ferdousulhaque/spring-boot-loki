@@ -98,7 +98,7 @@ public class RequestLogFilter extends GenericFilterBean {
     }
     @SneakyThrows
     private String getResponseBody(ContentCachingResponseWrapper response){
-        return new String(response.getContentAsByteArray());
+        return jsonEncodeAndTruncate(new String(response.getContentAsByteArray()));
     }
     @SneakyThrows
     private String getResponseCode(ContentCachingResponseWrapper response) {
@@ -132,6 +132,9 @@ public class RequestLogFilter extends GenericFilterBean {
 
     private String jsonEncodeAndTruncate(String payload){
         payload = payload.replace("\"", "\\\"");
-        return payload.substring(0, TRUNCATE_AFTER_WORD_COUNT);
+        if(payload.length() > TRUNCATE_AFTER_WORD_COUNT) {
+            payload = payload.substring(0, TRUNCATE_AFTER_WORD_COUNT);
+        }
+        return payload;
     }
 }

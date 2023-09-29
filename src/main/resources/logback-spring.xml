@@ -36,7 +36,7 @@
                     "thread":"%thread",
                     "ipaddr": "%X{ipaddr}",
                     "hostname": "%X{hostname}",
-                    "route": "%message",
+                    "message": "%message",
                     "requestBody": "%X{requestBody}",
                     "requestParams": "%X{requestParams}",
                     "responseHeaders": "%X{responseHeaders}",
