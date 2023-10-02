@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -20,7 +21,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,7 +33,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RequestLogFilter extends GenericFilterBean {
 
-    private static final int TRUNCATE_AFTER_WORD_COUNT = 100;
+    @Value("${loki.truncateCount}")
+    private int truncateAfterWordCount;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -132,8 +137,8 @@ public class RequestLogFilter extends GenericFilterBean {
 
     private String jsonEncodeAndTruncate(String payload){
         payload = payload.replace("\"", "\\\"");
-        if(payload.length() > TRUNCATE_AFTER_WORD_COUNT) {
-            payload = payload.substring(0, TRUNCATE_AFTER_WORD_COUNT);
+        if(payload.length() > truncateAfterWordCount) {
+            payload = payload.substring(0, truncateAfterWordCount);
         }
         return payload;
     }

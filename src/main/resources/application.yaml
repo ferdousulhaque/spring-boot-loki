@@ -22,3 +22,6 @@ logging:
       ferdousulhaque:
         logger:
           loki: INFO
+loki:
+  url: http://localhost:3100/loki/api/v1/push
+  truncateCount: 100
