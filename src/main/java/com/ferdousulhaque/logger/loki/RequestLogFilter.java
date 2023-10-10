@@ -67,7 +67,7 @@ public class RequestLogFilter extends GenericFilterBean {
         MDC.put("responseCode", responseCode);
 
         // Push
-        log.info("{}", request.getMethod() + " " + request.getRequestURI());
+        log.info("{}", jsonEncodeAndTruncate(request.getMethod() + " " + request.getRequestURI()));
     }
 
     private InetAddress getIp() throws UnknownHostException {
@@ -90,6 +90,9 @@ public class RequestLogFilter extends GenericFilterBean {
         BufferedReader reader = request.getReader();
         while ((line = reader.readLine()) != null) {
             body.append(line);
+        }
+        if(body.isEmpty()){
+            body.append(new String(request.getContentAsByteArray()));
         }
         return jsonEncodeAndTruncate(body.toString());
     }
@@ -136,7 +139,9 @@ public class RequestLogFilter extends GenericFilterBean {
     }
 
     private String jsonEncodeAndTruncate(String payload){
-        payload = payload.replace("\"", "\\\"");
+        payload = payload.replace("\"", "\\\"")
+                        .replace("\n", " ")
+                        .replace("\r", " ");
         if(payload.length() > truncateAfterWordCount) {
             payload = payload.substring(0, truncateAfterWordCount);
         }
