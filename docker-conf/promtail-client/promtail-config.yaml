@@ -11,5 +11,7 @@ scrape_configs:
       - targets:
           - localhost
         labels:
+          app: ${APP_NAME}
           job: spring-boot-loki
+          host: ${LOG_HOST}
           __path__: /var/log/*log
