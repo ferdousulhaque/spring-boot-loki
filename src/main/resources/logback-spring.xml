@@ -2,25 +2,57 @@
 <configuration>
     <springProperty name="name" source="spring.application.name" />
     <springProperty name="loki" source="loki.url" />
-    <timestamp key="timestamp" datePattern="yyyyMMdd"/>
 
-    <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/app.${name}.${timestamp}.json</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/logFile.%d{yyyy-MM-dd_HH:mm:ss}.json</fileNamePattern>
-            <maxHistory>5</maxHistory>
-            <totalSizeCap>20GB</totalSizeCap>
-        </rollingPolicy>
-        <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
-            <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSSX</timestampFormat>
-            <timestampFormatTimezoneId>Asia/Dhaka</timestampFormatTimezoneId>
-            <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
-                <prettyPrint>true</prettyPrint>
-            </jsonFormatter>
-        </layout>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>
+                %d{HH:mm:ss.SSS} %-5level %logger{36} %X{X-Request-ID} - %msg%n
+            </pattern>
+        </encoder>
     </appender>
 
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <!-- (1) -->
+        <http>
+            <url>${loki}</url>
+        </http>
+        <format>
+            <!-- (2) -->
+            <label>
+                <pattern>app=${name},host=${HOSTNAME},level=%level</pattern>
+                <!-- (3) -->
+                <readMarkers>true</readMarkers>
+            </label>
+            <message>
+                <!-- (4) -->
+                <pattern>
+                    {
+                    "level":"%level",
+                    "class":"%logger{36}",
+                    "thread":"%thread",
+                    "ipaddr": "%X{ipaddr}",
+                    "hostname": "%X{hostname}",
+                    "message": "%message",
+                    "requestBody": "%X{requestBody}",
+                    "requestParams": "%X{requestParams}",
+                    "responseHeaders": "%X{responseHeaders}",
+                    "responseBody": "%X{responseBody}",
+                    "responseCode": "%X{responseCode}",
+                    "requestId": "%X{X-Request-ID}"
+                    }
+                </pattern>
+            </message>
+        </format>
+    </appender>
+
+
     <root level="info">
-        <appender-ref ref="ROLLING" />
+        <appender-ref ref="LOKI" />
+        <appender-ref ref="CONSOLE" />
     </root>
 </configuration>
